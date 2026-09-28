@@ -1,13 +1,45 @@
-<!doctype html><html lang='da'><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
-<link rel='manifest' href='manifest.json'><title>JYSK PickFlow</title>
-<style>body{font-family:Arial;background:#f4f6f8;margin:0}.top{background:#003B7A;color:#fff;padding:16px}.card{background:#fff;margin:16px;padding:16px;border-radius:16px}input,button{width:100%;padding:12px;font-size:18px;border-radius:10px}button{background:#003B7A;color:#fff;border:0}.ok{color:green}.bad{color:red}</style>
-<div class=top><h2>JYSK PickFlow</h2><div>Offline prototype</div></div>
-<div class=card><div id=loc style='font-size:30px;font-weight:bold'></div><div id=desc></div><div>Artikel: <span id=art></span></div><div>EAN: <span id=ean></span></div><div id=cnt style='margin:10px 0'></div><input id=s placeholder='Scan EAN eller artikel'><button onclick=scan()>Godkend</button><div id=m></div></div>
+<!doctype html>
+<html lang="da"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>JYSK PickFlow v0.2</title>
+<link rel="manifest" href="manifest.json">
+<style>
+body{font-family:Arial;margin:0;background:#eef1f4}
+header{background:#003B7A;color:#fff;padding:18px}
+.card{background:#fff;margin:12px;border-radius:16px;padding:16px}
+.loc{font-size:48px;font-weight:bold}
+button{width:100%;padding:14px;border:0;border-radius:12px;font-size:18px;margin-top:8px}
+.primary{background:#003B7A;color:#fff}.green{background:#1e8e3e;color:#fff}.red{background:#c62828;color:#fff}
+input{width:100%;padding:12px;font-size:18px;border-radius:10px;border:1px solid #ccc;box-sizing:border-box}
+#reader{width:100%;border-radius:12px;display:none}
+.ok{color:#1e8e3e}.bad{color:#c62828}
+</style></head><body>
+<header><h2>JYSK PickFlow v0.2</h2><div>Offline • Kamera • Manuel backup</div></header>
+<div class="card"><div>TO <b>846757814</b></div><div id="progress"></div></div>
+<div class="card">
+<div id="loc" class="loc"></div><div id="desc"></div>
+<div>Artikel: <b id="art"></b></div>
+<div>EAN: <b id="ean"></b></div>
+<div id="qty"></div>
+<video id="reader" autoplay playsinline></video>
+<button class="primary" id="camBtn">📷 Start kamera</button>
+<input id="manual" placeholder="Scan eller skriv EAN / artikelnummer">
+<button class="primary" id="checkBtn">Godkend</button>
+<button class="green" id="nextBtn" style="display:none">Næste lokation</button>
+<button class="red" id="emptyBtn">Lokation tom</button>
+<div id="msg"></div></div>
 <script>
-if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js')}
-const items=[{l:'60626',a:'2765960',e:'5703333141734',q:6,d:'Toilet brush MEDLE steel'},{l:'60627',a:'2766440',e:'5703333141734',q:6,d:'Pedal bin MALA 3L'}];
-let i=0,p=0;
-function render(){let x=items[i];loc.textContent=x.l;desc.textContent=x.d;art.textContent=x.a;ean.textContent=x.e;cnt.textContent=`${p}/${x.q} stk`;s.value='';m.textContent='';m.className=''}
-function scan(){let x=items[i],v=s.value.trim();if(v===x.a||v===x.e){p++;cnt.textContent=`${p}/${x.q} stk`;m.textContent='✔ Godkendt';m.className='ok';if(p>=x.q){i++;p=0;if(i>=items.length){document.body.innerHTML='<div class=top><h2>TO færdig</h2></div><div class=card>Administrationen er blevet notificeret (simuleret).</div>';return;}setTimeout(render,500);}}else{m.textContent='✖ Forkert vare';m.className='bad';navigator.vibrate&&navigator.vibrate(150);}}
+const items=[
+{l:"60626",a:"2765960",e:"5703333141734",q:6,d:"Toilet brush MEDLE steel"},
+{l:"60627",a:"2766440",e:"5703333141734",q:6,d:"Pedal bin MALA 3L black"},
+{l:"60628",a:"2769000",e:"5703333141735",q:1,d:"Wall hook EKEDALEN"}
+];
+let i=0,p=0,stream=null,detector=null,timer=null;
+function render(){let x=items[i];loc.textContent=x.l;desc.textContent=x.d;art.textContent=x.a;ean.textContent=x.e;qty.textContent=`${p}/${x.q} stk`;progress.textContent=`Lokation ${i+1}/${items.length}`;msg.innerHTML="";manual.value="";nextBtn.style.display="none";checkBtn.style.display="block";}
+async function startCam(){reader.style.display="block";stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}});reader.srcObject=stream;if("BarcodeDetector" in window){detector=new BarcodeDetector({formats:["ean_13","code_128"]});timer=setInterval(scanFrame,500);}else{msg.innerHTML="<span class=bad>Browser understøtter ikke BarcodeDetector endnu.</span>";}}
+async function scanFrame(){if(!detector||reader.readyState<2)return;try{const codes=await detector.detect(reader);if(codes.length){manual.value=codes[0].rawValue;check();}}catch(e){}}
+function stopCam(){if(timer)clearInterval(timer);if(stream){stream.getTracks().forEach(t=>t.stop());}reader.style.display="none";}
+function check(){let x=items[i],v=manual.value.trim();if(v===x.a||v===x.e){p++;qty.textContent=`${p}/${x.q} stk`;msg.innerHTML="<span class=ok>✔ Godkendt</span>";navigator.vibrate&&navigator.vibrate(40);if(p>=x.q){checkBtn.style.display="none";nextBtn.style.display="block";msg.innerHTML="<span class=ok>Lokation færdig</span>";stopCam();}}else{msg.innerHTML="<span class=bad>✖ Forkert vare</span>";navigator.vibrate&&navigator.vibrate([120,80,120]);}}
+camBtn.onclick=startCam;checkBtn.onclick=check;nextBtn.onclick=()=>{i++;p=0;if(i>=items.length){document.body.innerHTML="<header><h2>TO færdig</h2></header><div class=card><h3>✔ 846757814 afsluttet</h3><p>Næste version sender dette til dashboard.</p></div>";}else render();};emptyBtn.onclick=()=>{msg.innerHTML="<span class=bad>Lokation tom registreret (kommer på dashboard i næste version).</span>";};
 render();
-</script>
+if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js");}
+</script></body></html>

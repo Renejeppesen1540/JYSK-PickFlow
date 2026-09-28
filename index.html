@@ -1,45 +1,35 @@
-<!doctype html>
-<html lang="da"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>JYSK PickFlow v0.2</title>
-<link rel="manifest" href="manifest.json">
+<!doctype html><html lang="da"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>JYSK PickFlow v0.3</title><link rel="manifest" href="manifest.json">
 <style>
-body{font-family:Arial;margin:0;background:#eef1f4}
-header{background:#003B7A;color:#fff;padding:18px}
-.card{background:#fff;margin:12px;border-radius:16px;padding:16px}
-.loc{font-size:48px;font-weight:bold}
-button{width:100%;padding:14px;border:0;border-radius:12px;font-size:18px;margin-top:8px}
-.primary{background:#003B7A;color:#fff}.green{background:#1e8e3e;color:#fff}.red{background:#c62828;color:#fff}
-input{width:100%;padding:12px;font-size:18px;border-radius:10px;border:1px solid #ccc;box-sizing:border-box}
-#reader{width:100%;border-radius:12px;display:none}
-.ok{color:#1e8e3e}.bad{color:#c62828}
+body{margin:0;font-family:Arial;background:#eef2f5}header{background:#003B7A;color:#fff;padding:16px}
+.card{background:#fff;margin:12px;border-radius:16px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.loc{font-size:56px;font-weight:700}.row{display:flex;justify-content:space-between;align-items:center}
+button{width:100%;padding:14px;border-radius:12px;border:0;font-size:18px;margin-top:8px}
+.primary{background:#003B7A;color:#fff}.warn{background:#c62828;color:#fff}.ok{background:#1e8e3e;color:#fff}
+input[type=text]{width:100%;padding:12px;font-size:18px;border-radius:10px;border:1px solid #ccc;box-sizing:border-box}
+#video{width:100%;display:none;border-radius:12px}.msg{min-height:26px;font-weight:700}
+.good{color:#1e8e3e}.bad{color:#c62828}.pill{background:#e6eef8;padding:6px 10px;border-radius:20px}
 </style></head><body>
-<header><h2>JYSK PickFlow v0.2</h2><div>Offline • Kamera • Manuel backup</div></header>
-<div class="card"><div>TO <b>846757814</b></div><div id="progress"></div></div>
+<header><h2>JYSK PickFlow v0.3</h2><div>Pluk-app • Offline • Testversion</div></header>
+<div class="card"><div class=row><div>TO <b>846757814</b></div><div class=pill id=step>1/3</div></div></div>
 <div class="card">
-<div id="loc" class="loc"></div><div id="desc"></div>
-<div>Artikel: <b id="art"></b></div>
-<div>EAN: <b id="ean"></b></div>
-<div id="qty"></div>
-<video id="reader" autoplay playsinline></video>
-<button class="primary" id="camBtn">📷 Start kamera</button>
-<input id="manual" placeholder="Scan eller skriv EAN / artikelnummer">
-<button class="primary" id="checkBtn">Godkend</button>
-<button class="green" id="nextBtn" style="display:none">Næste lokation</button>
-<button class="red" id="emptyBtn">Lokation tom</button>
-<div id="msg"></div></div>
+<div id=loc class=loc></div><div id=desc></div>
+<div>Artikel: <b id=art></b></div><div>EAN: <b id=ean></b></div>
+<div id=count style="margin:10px 0"></div>
+<video id=video autoplay playsinline></video>
+<button id=cam class=primary>📷 Start kamera</button>
+<input id=input type=text placeholder="Scan eller skriv EAN / artikelnummer">
+<button id=check class=primary>Godkend vare</button>
+<div id=qtyBox style="display:none"><p>Hvor mange tager du?</p><input id=qtyInput type=text value="1"><button id=saveQty class=ok>Bekræft antal</button></div>
+<button id=empty class=warn>🚩 Lokation tom</button>
+<div id=msg class=msg></div>
+</div>
 <script>
-const items=[
-{l:"60626",a:"2765960",e:"5703333141734",q:6,d:"Toilet brush MEDLE steel"},
-{l:"60627",a:"2766440",e:"5703333141734",q:6,d:"Pedal bin MALA 3L black"},
-{l:"60628",a:"2769000",e:"5703333141735",q:1,d:"Wall hook EKEDALEN"}
-];
-let i=0,p=0,stream=null,detector=null,timer=null;
-function render(){let x=items[i];loc.textContent=x.l;desc.textContent=x.d;art.textContent=x.a;ean.textContent=x.e;qty.textContent=`${p}/${x.q} stk`;progress.textContent=`Lokation ${i+1}/${items.length}`;msg.innerHTML="";manual.value="";nextBtn.style.display="none";checkBtn.style.display="block";}
-async function startCam(){reader.style.display="block";stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}});reader.srcObject=stream;if("BarcodeDetector" in window){detector=new BarcodeDetector({formats:["ean_13","code_128"]});timer=setInterval(scanFrame,500);}else{msg.innerHTML="<span class=bad>Browser understøtter ikke BarcodeDetector endnu.</span>";}}
-async function scanFrame(){if(!detector||reader.readyState<2)return;try{const codes=await detector.detect(reader);if(codes.length){manual.value=codes[0].rawValue;check();}}catch(e){}}
-function stopCam(){if(timer)clearInterval(timer);if(stream){stream.getTracks().forEach(t=>t.stop());}reader.style.display="none";}
-function check(){let x=items[i],v=manual.value.trim();if(v===x.a||v===x.e){p++;qty.textContent=`${p}/${x.q} stk`;msg.innerHTML="<span class=ok>✔ Godkendt</span>";navigator.vibrate&&navigator.vibrate(40);if(p>=x.q){checkBtn.style.display="none";nextBtn.style.display="block";msg.innerHTML="<span class=ok>Lokation færdig</span>";stopCam();}}else{msg.innerHTML="<span class=bad>✖ Forkert vare</span>";navigator.vibrate&&navigator.vibrate([120,80,120]);}}
-camBtn.onclick=startCam;checkBtn.onclick=check;nextBtn.onclick=()=>{i++;p=0;if(i>=items.length){document.body.innerHTML="<header><h2>TO færdig</h2></header><div class=card><h3>✔ 846757814 afsluttet</h3><p>Næste version sender dette til dashboard.</p></div>";}else render();};emptyBtn.onclick=()=>{msg.innerHTML="<span class=bad>Lokation tom registreret (kommer på dashboard i næste version).</span>";};
-render();
-if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js");}
+const data=[{l:"60626",a:"2765960",e:"5703333141734",q:6,d:"Toilet brush MEDLE steel"},{l:"60627",a:"2766440",e:"5703333141734",q:6,d:"Pedal bin MALA 3L black"},{l:"60628",a:"2769000",e:"5703333141735",q:1,d:"Wall hook EKEDALEN"}];
+let i=0,stream=null,detector=null,timer=null;
+function render(){let x=data[i];loc.textContent=x.l;desc.textContent=x.d;art.textContent=x.a;ean.textContent=x.e;count.textContent="Skal plukkes: "+x.q+" stk";step.textContent=(i+1)+"/"+data.length;msg.innerHTML="";qtyBox.style.display="none";input.value="";}
+async function startCam(){video.style.display="block";stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}});video.srcObject=stream;if("BarcodeDetector" in window){detector=new BarcodeDetector({formats:["ean_13","code_128"]});timer=setInterval(async()=>{const c=await detector.detect(video).catch(()=>[]);if(c.length){input.value=c[0].rawValue;check();}},400);}else msg.innerHTML='<span class=bad>Browser understøtter ikke BarcodeDetector.</span>';}
+function stopCam(){if(timer)clearInterval(timer);if(stream)stream.getTracks().forEach(t=>t.stop());video.style.display="none";}
+function check(){let x=data[i],v=input.value.trim();if(v===x.a||v===x.e){navigator.vibrate&&navigator.vibrate(40);msg.innerHTML='<span class=good>✔ Korrekt vare</span>';qtyInput.value=x.q;qtyBox.style.display='block';}else{navigator.vibrate&&navigator.vibrate([120,80,120]);msg.innerHTML='<span class=bad>✖ Forkert vare</span>';}}
+cam.onclick=startCam;check.onclick=check;saveQty.onclick=()=>{stopCam();i++;if(i>=data.length){document.body.innerHTML='<header><h2>TO færdig</h2></header><div class=card><h3>✔ Pluk afsluttet</h3><p>Næste version sender status til dashboard.</p></div>';return;}render();};empty.onclick=()=>{msg.innerHTML='<span class=bad>Lokation tom registreret.</span>';};render();if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js");}
 </script></body></html>

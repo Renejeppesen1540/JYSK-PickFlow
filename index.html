@@ -1,0 +1,13 @@
+<!doctype html><html lang='da'><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
+<link rel='manifest' href='manifest.json'><title>JYSK PickFlow</title>
+<style>body{font-family:Arial;background:#f4f6f8;margin:0}.top{background:#003B7A;color:#fff;padding:16px}.card{background:#fff;margin:16px;padding:16px;border-radius:16px}input,button{width:100%;padding:12px;font-size:18px;border-radius:10px}button{background:#003B7A;color:#fff;border:0}.ok{color:green}.bad{color:red}</style>
+<div class=top><h2>JYSK PickFlow</h2><div>Offline prototype</div></div>
+<div class=card><div id=loc style='font-size:30px;font-weight:bold'></div><div id=desc></div><div>Artikel: <span id=art></span></div><div>EAN: <span id=ean></span></div><div id=cnt style='margin:10px 0'></div><input id=s placeholder='Scan EAN eller artikel'><button onclick=scan()>Godkend</button><div id=m></div></div>
+<script>
+if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js')}
+const items=[{l:'60626',a:'2765960',e:'5703333141734',q:6,d:'Toilet brush MEDLE steel'},{l:'60627',a:'2766440',e:'5703333141734',q:6,d:'Pedal bin MALA 3L'}];
+let i=0,p=0;
+function render(){let x=items[i];loc.textContent=x.l;desc.textContent=x.d;art.textContent=x.a;ean.textContent=x.e;cnt.textContent=`${p}/${x.q} stk`;s.value='';m.textContent='';m.className=''}
+function scan(){let x=items[i],v=s.value.trim();if(v===x.a||v===x.e){p++;cnt.textContent=`${p}/${x.q} stk`;m.textContent='✔ Godkendt';m.className='ok';if(p>=x.q){i++;p=0;if(i>=items.length){document.body.innerHTML='<div class=top><h2>TO færdig</h2></div><div class=card>Administrationen er blevet notificeret (simuleret).</div>';return;}setTimeout(render,500);}}else{m.textContent='✖ Forkert vare';m.className='bad';navigator.vibrate&&navigator.vibrate(150);}}
+render();
+</script>

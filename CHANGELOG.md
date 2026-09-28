@@ -1,5 +1,1 @@
-# v0.5
-- Startskærm med Scan plukliste
-- TO-start
-- Test OCR-flow
-- Automatisk plukflow
+v0.7: Én Scan plukliste-knap, auto OCR, parser forsøger at finde alle lokationer.

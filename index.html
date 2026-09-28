@@ -1,5 +1,54 @@
-<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>JYSK PickFlow v1.4</title><link rel='stylesheet' href='css/style.css'></head><body>
-<header><h1>JYSK PickFlow v1.4</h1></header>
-<div class='card' id='login'><h2>Login</h2><input id=i value=RLO><input id=n value="René Jeppesen"><input id=d value=D020><button onclick=start()>Gem og fortsæt</button></div>
-<div class='card hidden' id=pick><div id=head></div><div id=prog></div><h2 id=loc></h2><div id=art></div><div id=qty></div><input id=scan placeholder="Scan artikel eller EAN"><button onclick=ok()>Godkend</button></div>
-<script src='js/data.js'></script><script src='js/app.js'></script></body></html>
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JYSK PickFlow v1.5</title>
+
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header>
+  <h1>JYSK PickFlow v1.5</h1>
+</header>
+
+<div class="container">
+
+  <div id="login">
+    <h2>Login</h2>
+
+    <input id="i" placeholder="Initialer (RLO)">
+    <input id="n" placeholder="Navn (René Jeppesen)">
+    <input id="d" value="D020">
+
+    <button onclick="start()">Gem og fortsæt</button>
+  </div>
+
+  <div id="pick" class="hidden">
+
+    <div id="userInfo"></div>
+
+    <h2 id="toNr">TO</h2>
+
+    <div id="progress"></div>
+
+    <h1 id="lokation">00000</h1>
+
+    <p>Artikel: <b id="artikel"></b></p>
+    <p>Antal: <b id="antal"></b></p>
+
+    <input id="scan" placeholder="Scan artikel eller EAN">
+
+    <button onclick="ok()">Godkend</button>
+
+  </div>
+
+</div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+
+</body>
+</html>

@@ -2,8 +2,8 @@ let current = 0;
 let startTime = null;
 let user = {};
 
-// Gem login lokalt
 const saved = JSON.parse(localStorage.getItem("pickUser") || "null");
+
 if (saved) {
   user = saved;
   document.getElementById("login").classList.add("hidden");
@@ -14,7 +14,6 @@ if (saved) {
   showItem();
 }
 
-// Login
 function start() {
   const initialer = document.getElementById("i").value.trim();
   const navn = document.getElementById("n").value.trim();
@@ -34,10 +33,10 @@ function start() {
     `${user.initialer} • ${user.navn} • ${user.dc}`;
 
   startTime = new Date();
+  current = 0;
   showItem();
 }
 
-// Vis næste vare
 function showItem() {
   const item = PICK_DATA[current];
 
@@ -49,11 +48,11 @@ function showItem() {
   document.getElementById("artikel").textContent = item[1];
   document.getElementById("antal").textContent = item[2] + " stk";
 
-  document.getElementById("scan").value = "";
-  document.getElementById("scan").focus();
+  const scan = document.getElementById("scan");
+  scan.value = "";
+  scan.focus();
 }
 
-// Godkend scan
 function ok() {
   const value = document.getElementById("scan").value.trim();
   const item = PICK_DATA[current];
@@ -74,23 +73,19 @@ function ok() {
   }
 }
 
-// Færdig
 function finishPick() {
-  const slut = new Date();
-  const minutter = Math.round((slut - startTime) / 60000);
+  const end = new Date();
+  const minutes = Math.round((end - startTime) / 60000);
 
   const subject = encodeURIComponent("TO 846757814 færdigplukket");
-
   const body = encodeURIComponent(
 `TO: 846757814
 
 Plukker: ${user.navn} (${user.initialer})
 DC: ${user.dc}
 
-Antal lokationer: ${PICK_DATA.length}
-Tid: ${minutter} min
-
-Sendt fra JYSK PickFlow v1.5`
+Lokationer: ${PICK_DATA.length}
+Tid: ${minutes} minutter`
   );
 
   window.location.href =
@@ -99,7 +94,6 @@ Sendt fra JYSK PickFlow v1.5`
   alert("Pluk gennemført.");
 }
 
-// Enter virker
 document.addEventListener("keydown", e => {
   if (e.key === "Enter" &&
       !document.getElementById("pick").classList.contains("hidden")) {

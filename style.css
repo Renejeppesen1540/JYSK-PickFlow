@@ -1,0 +1,9 @@
+
+body{margin:0;font-family:Arial,sans-serif;background:#eef2f5}
+header{background:#003B7A;color:#fff;padding:16px}
+.card{background:#fff;margin:12px;border-radius:18px;padding:18px}
+button{width:100%;padding:16px;border:0;border-radius:12px;background:#003B7A;color:#fff;font-size:20px;margin-top:10px}
+.loc{font-size:54px;font-weight:800}
+table{width:100%;border-collapse:collapse}td{padding:8px;border-bottom:1px solid #ddd}
+.progress{height:10px;background:#d9e3ef;border-radius:10px;overflow:hidden;margin-top:10px}
+.bar{height:100%;width:0;background:#1E8E3E}

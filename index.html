@@ -1,0 +1,24 @@
+<!doctype html><html lang='da'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>JYSK PickFlow v2.0</title><link rel='manifest' href='manifest.json'><style>
+body{margin:0;font-family:Arial;background:#eef2f5}header{background:#003b82;color:#fff;padding:18px}.container{max-width:720px;margin:auto;padding:15px}
+.card{background:#fff;border-radius:18px;padding:20px;margin-top:15px}.hidden{display:none}
+input,button{width:100%;padding:16px;font-size:20px;margin:10px 0;border-radius:10px;border:1px solid #ccc}
+button{background:#003b82;color:#fff;border:none}#userInfo{background:#e8f0fe;padding:10px;border-radius:10px;font-weight:bold}
+#lokation{font-size:72px;text-align:center;margin:20px 0}#progress{text-align:right;color:#666}
+</style></head><body><header><h1>JYSK PickFlow v2.0</h1></header><div class='container'>
+<div id='login' class='card'><h2>Login</h2><input id='i' placeholder='Initialer (RLO)' value='RLO'><input id='n' placeholder='Navn' value='René Jeppesen'><input id='d' value='D020'><button onclick='start()'>Gem og fortsæt</button></div>
+<div id='pick' class='card hidden'><div id='userInfo'></div><h2 id='toNr'>TO 846757814</h2><div id='progress'></div><h1 id='lokation'></h1><p>Artikel: <b id='artikel'></b></p><p>Antal: <b id='antal'></b></p><input id='scan' placeholder='Scan artikel eller EAN'><button onclick='ok()'>Godkend</button></div></div>
+<script>const PICK_DATA=[
+["60626","2765960",6,"5703333141734"],["60627","2766440",6,"5703333141741"],
+["60628","2769000",1,"5703333141758"],["60629","2769800",6,"5703333141765"],
+["60630","2773701",6,"5703333141772"],["60631","2773801",6,"5703333141789"],
+["60633","2778312",4,"5703333141796"],["60634","2779802",6,"5703333141802"],
+["60635","2780940",12,"5703333141819"],["60639","2781500",10,"5703333141826"],
+["60640","2781700",12,"5703333141833"],["60641","2784103",6,"5703333141840"],
+["60642","3248411",1,"5703333141857"],["60643","3264346",1,"5703333141864"],
+["60650","3264378",1,"5703333141871"],["60666","3271032",1,"5703333141888"]];
+let idx=0,startTime,user={};
+function start(){user={i:i.value,n:n.value,d:d.value};localStorage.setItem('pickUser',JSON.stringify(user));login.classList.add('hidden');pick.classList.remove('hidden');userInfo.textContent=`${user.i} • ${user.n} • ${user.d}`;startTime=new Date();show();}
+function show(){let x=PICK_DATA[idx];progress.textContent=`${idx+1}/${PICK_DATA.length}`;lokation.textContent=x[0];artikel.textContent=x[1];antal.textContent=x[2]+' stk';scan.value='';scan.focus();}
+function ok(){let x=PICK_DATA[idx],v=scan.value.trim();if(v===x[1]||v===x[3]){navigator.vibrate&&navigator.vibrate(120);idx++;if(idx>=PICK_DATA.length){let m=Math.round((new Date()-startTime)/60000);location.href=`mailto:rloejeppesen@gmail.com?subject=TO%20846757814%20færdigplukket&body=Plukker:%20${user.n}%20(${user.i})%0ADC:%20${user.d}%0ATid:%20${m}%20min`;alert('Pluk gennemført!');}else show();}else alert('Forkert vare.');}
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&!pick.classList.contains('hidden'))ok();});
+</script></body></html>

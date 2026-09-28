@@ -1,1 +1,0 @@
-v0.10: Scan-knappen åbner kamera/billedvælger og fortsætter til plukflow.

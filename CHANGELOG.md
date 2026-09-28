@@ -1,1 +1,1 @@
-v0.8 forbedret OCR med beskæring, gråskala, fremdriftsbjælke og dubletfilter
+v0.9: Start pluk virker, komplet plukflow, EAN/artikel godkendelse, antal og afslutning.

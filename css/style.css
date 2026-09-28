@@ -1,32 +1,67 @@
+*{box-sizing:border-box}
 body{
-  font-family: Arial, sans-serif;
-  margin:0;
-  background:#efefef;
+    margin:0;
+    font-family:Arial,sans-serif;
+    background:#eef2f5;
 }
-
 header{
-  background:#003b7a;
-  color:white;
-  padding:18px;
+    background:#003b82;
+    color:white;
+    padding:18px;
 }
-
-.card{
-  background:white;
-  margin:16px;
-  padding:16px;
-  border-radius:16px;
+.container{
+    max-width:700px;
+    margin:auto;
+    padding:15px;
 }
+#login,#pick{
+    background:white;
+    border-radius:18px;
+    padding:20px;
+    margin-top:15px;
+}
+.hidden{display:none}
 
-button,input{
-  width:100%;
-  padding:14px;
-  font-size:18px;
-  margin-top:10px;
+input{
+    width:100%;
+    padding:16px;
+    font-size:20px;
+    margin:10px 0;
+    border:1px solid #ccc;
+    border-radius:10px;
 }
 
 button{
-  background:#003b7a;
-  color:white;
-  border:0;
-  border-radius:10px;
+    width:100%;
+    padding:18px;
+    font-size:22px;
+    background:#003b82;
+    color:white;
+    border:none;
+    border-radius:12px;
+    margin-top:10px;
+}
+
+button:active{
+    transform:scale(.98);
+}
+
+#userInfo{
+    background:#e8f0fe;
+    padding:10px;
+    border-radius:10px;
+    font-weight:bold;
+    margin-bottom:15px;
+}
+
+#lokation{
+    font-size:72px;
+    text-align:center;
+    margin:15px 0;
+}
+
+#progress{
+    text-align:right;
+    color:#666;
+    margin-bottom:10px;
 }

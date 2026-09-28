@@ -1,25 +1,23 @@
-<!doctype html><html lang='da'><head>
-<meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
-<title>JYSK PickFlow v1.2</title>
+<!doctype html><html lang='da'><head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width,initial-scale=1'>
+<title>JYSK PickFlow v1.2.1</title>
 <link rel='stylesheet' href='css/style.css'>
-<link rel='manifest' href='manifest.json'>
-<script src='https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js'></script>
-<script>emailjs.init("REPLACE_WITH_PUBLIC_KEY");</script>
-</head><body>
-<header><h2 id=top>JYSK PickFlow v1.2</h2></header>
-
-<div id=login class=card>
-<h3>Første login</h3>
-<input id=initials placeholder="Initialer (RLO)">
-<input id=name placeholder="Navn (René Jeppesen)">
-<input id=store placeholder="Butik (D020)" value="D020">
-<button onclick="saveUser()">Gem og fortsæt</button>
-</div>
-
-<div id=app style="display:none">
-<div class=card><b id=userLabel></b><input id=file type=file accept="image/*" capture="environment" hidden>
-<button onclick="file.click()">📄 Scan plukliste</button><div class=progress><div id=bar class=bar></div></div></div>
-<div id=result class=card style="display:none"><h3>TO 846757814</h3><p>16 lokationer fundet</p><table id=tbl></table><button onclick="startPick()">Start pluk</button></div>
-<div id=pick class=card style="display:none"><div id=step></div><div id=loc class=loc></div><div id=desc></div><div>Artikel: <b id=art></b></div><div>EAN: <b id=ean></b></div><div>Antal: <b id=qty></b></div><input id=scan placeholder="Scan EAN eller artikelnummer"><div id=msg></div></div>
-</div>
-<script src="js/data.js"></script><script src="js/app.js"></script></body></html>
+<link rel='manifest' href='manifest.json'></head><body>
+<header><h1>JYSK PickFlow v1.2.1</h1><div id='userBar' style='display:none'></div></header>
+<section id='login' class='card'><h2>Første login</h2>
+<input id='initials' placeholder='Initialer'>
+<input id='name' placeholder='Navn'>
+<input id='store' value='D020' placeholder='Butik'>
+<button id='saveBtn'>Gem og fortsæt</button></section>
+<section id='app' class='card' style='display:none'>
+<button id='logoutBtn'>Skift bruger</button>
+<input id='fileInput' type='file' accept='image/*' capture='environment' hidden>
+<button id='scanBtn'>📄 Scan plukliste</button>
+<div id='progress'><div id='bar'></div></div>
+<div id='result' style='display:none'><h3>TO 846757814</h3><p>16 lokationer fundet.</p>
+<table id='tbl'></table><button id='startBtn'>Start pluk</button></div>
+<div id='pick' style='display:none'>
+<div id='step'></div><h1 id='loc'></h1><div id='desc'></div><div>Artikel: <b id='art'></b></div><div>EAN: <b id='ean'></b></div><div>Antal: <b id='qty'></b></div>
+<input id='scanInput' placeholder='Scan EAN eller artikelnummer'><div id='msg'></div></div>
+</section>
+<script src='js/data.js'></script><script src='js/app.js'></script></body></html>

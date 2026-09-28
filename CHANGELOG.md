@@ -1,1 +1,1 @@
-v0.9: Start pluk virker, komplet plukflow, EAN/artikel godkendelse, antal og afslutning.
+v0.10: Scan-knappen åbner kamera/billedvælger og fortsætter til plukflow.

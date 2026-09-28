@@ -1,35 +1,84 @@
-<!doctype html><html lang="da"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>JYSK PickFlow v0.3</title><link rel="manifest" href="manifest.json">
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>JYSK PickFlow v0.5</title>
+<link rel="manifest" href="manifest.json">
 <style>
-body{margin:0;font-family:Arial;background:#eef2f5}header{background:#003B7A;color:#fff;padding:16px}
-.card{background:#fff;margin:12px;border-radius:16px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
-.loc{font-size:56px;font-weight:700}.row{display:flex;justify-content:space-between;align-items:center}
-button{width:100%;padding:14px;border-radius:12px;border:0;font-size:18px;margin-top:8px}
-.primary{background:#003B7A;color:#fff}.warn{background:#c62828;color:#fff}.ok{background:#1e8e3e;color:#fff}
-input[type=text]{width:100%;padding:12px;font-size:18px;border-radius:10px;border:1px solid #ccc;box-sizing:border-box}
-#video{width:100%;display:none;border-radius:12px}.msg{min-height:26px;font-weight:700}
-.good{color:#1e8e3e}.bad{color:#c62828}.pill{background:#e6eef8;padding:6px 10px;border-radius:20px}
-</style></head><body>
-<header><h2>JYSK PickFlow v0.3</h2><div>Pluk-app • Offline • Testversion</div></header>
-<div class="card"><div class=row><div>TO <b>846757814</b></div><div class=pill id=step>1/3</div></div></div>
-<div class="card">
-<div id=loc class=loc></div><div id=desc></div>
-<div>Artikel: <b id=art></b></div><div>EAN: <b id=ean></b></div>
-<div id=count style="margin:10px 0"></div>
-<video id=video autoplay playsinline></video>
-<button id=cam class=primary>📷 Start kamera</button>
-<input id=input type=text placeholder="Scan eller skriv EAN / artikelnummer">
-<button id=check class=primary>Godkend vare</button>
-<div id=qtyBox style="display:none"><p>Hvor mange tager du?</p><input id=qtyInput type=text value="1"><button id=saveQty class=ok>Bekræft antal</button></div>
-<button id=empty class=warn>🚩 Lokation tom</button>
-<div id=msg class=msg></div>
+body{margin:0;font-family:Arial;background:#EEF2F5}
+header{background:#003B7A;color:#fff;padding:16px}
+.card{background:#fff;margin:10px;border-radius:18px;padding:18px}
+.loc{font-size:64px;font-weight:800}
+button{width:100%;padding:15px;border-radius:12px;border:0;font-size:20px;margin-top:8px}
+.primary{background:#003B7A;color:#fff}.green{background:#1E8E3E;color:#fff}
+input{width:100%;padding:12px;font-size:18px;border-radius:10px;border:1px solid #ccc;box-sizing:border-box}
+#camera,#pickView,#qtyPanel,#toPanel{display:none}
+#preview{width:100%;border-radius:12px;margin-top:10px}
+.badge{background:#E6EEF8;padding:5px 10px;border-radius:20px}
+#ok{position:fixed;inset:0;background:#1E8E3E;color:#fff;font-size:52px;font-weight:800;display:none;align-items:center;justify-content:center}
+</style>
+</head>
+<body>
+<div id=ok>✔ GODKENDT</div>
+<header><h2>JYSK PickFlow v0.5</h2><div>Scan plukliste • Offline testversion</div></header>
+
+<div id=start class=card>
+<h3>Start pluk</h3>
+<button class=primary onclick="scanTO()">📷 Scan TO-stregkode</button>
+<input id=toInput placeholder="eller skriv TO-nummer">
+<button class=primary onclick="loadTO()">Start TO</button>
+<hr>
+<p><b>Test af SAP-plukliste</b></p>
+<input id=file type=file accept="image/*">
+<img id=preview style="display:none">
+<button class=primary onclick="simulateOCR()">📄 Læs plukliste (test)</button>
 </div>
+
+<div id=toPanel class=card>
+<div style="display:flex;justify-content:space-between"><div>TO <b id=toNo></b></div><div class=badge id=prog></div></div>
+</div>
+
+<div id=pickView class=card>
+<div class=loc id=loc></div>
+<h3 id=desc></h3>
+<div>Artikel: <b id=art></b></div>
+<div>EAN: <b id=ean></b></div>
+<div>Antal: <b id=need></b></div>
+<video id=camera autoplay playsinline style="width:100%;border-radius:12px"></video>
+<button class=primary onclick="startCam()">📷 Scan vare</button>
+<input id=scan placeholder="EAN eller artikelnummer">
+<div id=msg></div>
+<div id=qtyPanel>
+<h3>Hvor mange tager du?</h3>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+<button onclick="setQty(1)">1</button><button onclick="setQty(2)">2</button><button onclick="setQty(4)">4</button><button onclick="setQty(6)">6</button>
+<button onclick="setQty(8)">8</button><button onclick="setQty(10)">10</button><button onclick="setQty(12)">12</button><button onclick="setQty(cur.qty)">Alle</button>
+</div>
+<input id=qty value=1 style="text-align:center;margin-top:8px">
+<button class=green onclick="confirmQty()">Bekræft</button>
+</div>
+</div>
+
 <script>
-const data=[{l:"60626",a:"2765960",e:"5703333141734",q:6,d:"Toilet brush MEDLE steel"},{l:"60627",a:"2766440",e:"5703333141734",q:6,d:"Pedal bin MALA 3L black"},{l:"60628",a:"2769000",e:"5703333141735",q:1,d:"Wall hook EKEDALEN"}];
-let i=0,stream=null,detector=null,timer=null;
-function render(){let x=data[i];loc.textContent=x.l;desc.textContent=x.d;art.textContent=x.a;ean.textContent=x.e;count.textContent="Skal plukkes: "+x.q+" stk";step.textContent=(i+1)+"/"+data.length;msg.innerHTML="";qtyBox.style.display="none";input.value="";}
-async function startCam(){video.style.display="block";stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}});video.srcObject=stream;if("BarcodeDetector" in window){detector=new BarcodeDetector({formats:["ean_13","code_128"]});timer=setInterval(async()=>{const c=await detector.detect(video).catch(()=>[]);if(c.length){input.value=c[0].rawValue;check();}},400);}else msg.innerHTML='<span class=bad>Browser understøtter ikke BarcodeDetector.</span>';}
-function stopCam(){if(timer)clearInterval(timer);if(stream)stream.getTracks().forEach(t=>t.stop());video.style.display="none";}
-function check(){let x=data[i],v=input.value.trim();if(v===x.a||v===x.e){navigator.vibrate&&navigator.vibrate(40);msg.innerHTML='<span class=good>✔ Korrekt vare</span>';qtyInput.value=x.q;qtyBox.style.display='block';}else{navigator.vibrate&&navigator.vibrate([120,80,120]);msg.innerHTML='<span class=bad>✖ Forkert vare</span>';}}
-cam.onclick=startCam;check.onclick=check;saveQty.onclick=()=>{stopCam();i++;if(i>=data.length){document.body.innerHTML='<header><h2>TO færdig</h2></header><div class=card><h3>✔ Pluk afsluttet</h3><p>Næste version sender status til dashboard.</p></div>';return;}render();};empty.onclick=()=>{msg.innerHTML='<span class=bad>Lokation tom registreret.</span>';};render();if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js");}
-</script></body></html>
+const sample=[
+{loc:"60626",art:"2765960",ean:"5703333141734",qty:6,desc:"Toilet brush MEDLE steel"},
+{loc:"60627",art:"2766440",ean:"5703333141734",qty:6,desc:"Pedal bin MALA 3L black"},
+{loc:"60628",art:"2769000",ean:"5703333141735",qty:1,desc:"Wall hook EKEDALEN"}
+];
+let list=[],idx=0,cur=null,stream=null,detector=null,timer=null;
+file.onchange=e=>{const f=e.target.files[0];if(f){preview.src=URL.createObjectURL(f);preview.style.display='block';}}
+function scanTO(){toInput.focus();}
+function loadTO(){list=sample;idx=0;toNo.textContent=toInput.value||"846757814";start.style.display='none';toPanel.style.display='block';pickView.style.display='block';render();}
+function simulateOCR(){toInput.value="846757814";loadTO();alert("Testversion: Pluklisten er indlæst som TO 846757814. Næste version bruger rigtig OCR.");}
+function render(){cur=list[idx];loc.textContent=cur.loc;desc.textContent=cur.desc;art.textContent=cur.art;ean.textContent=cur.ean;need.textContent=cur.qty+" stk";prog.textContent=(idx+1)+"/"+list.length;scan.value="";qtyPanel.style.display='none';msg.textContent="";}
+async function startCam(){camera.style.display='block';stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}});camera.srcObject=stream;if("BarcodeDetector" in window){detector=new BarcodeDetector({formats:["ean_13","code_128"]});timer=setInterval(async()=>{const c=await detector.detect(camera).catch(()=>[]);if(c.length){scan.value=c[0].rawValue;validate();}},300);}}
+function stopCam(){if(timer)clearInterval(timer);if(stream)stream.getTracks().forEach(t=>t.stop());camera.style.display='none';}
+function validate(){const v=scan.value.trim();if(v===cur.art||v===cur.ean){navigator.vibrate&&navigator.vibrate(40);msg.style.color="#1E8E3E";msg.textContent="✔ Korrekt vare";qty.value=cur.qty;qtyPanel.style.display='block';stopCam();}else{navigator.vibrate&&navigator.vibrate([120,80,120]);msg.style.color="#C62828";msg.textContent="✖ Forkert vare";}}
+scan.addEventListener("input",()=>{if(scan.value.length>=7)validate();});
+function setQty(n){qty.value=n;}
+function confirmQty(){ok.style.display='flex';setTimeout(()=>{ok.style.display='none';idx++;if(idx>=list.length){document.body.innerHTML='<header><h2>TO FÆRDIG</h2></header><div class=card><h1>✔ 846757814</h1><p>Pluk afsluttet.</p></div>';}else render();},600);}
+if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js");
+</script>
+</body>
+</html>

@@ -1,5 +1,5 @@
-# v0.3
-- Kamera
-- Antalsdialog
-- Lokation tom
-- Offline
+# v0.5
+- Startskærm med Scan plukliste
+- TO-start
+- Test OCR-flow
+- Automatisk plukflow

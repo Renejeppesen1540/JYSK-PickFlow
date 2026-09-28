@@ -1,1 +1,1 @@
-v0.7: Én Scan plukliste-knap, auto OCR, parser forsøger at finde alle lokationer.
+v0.8 forbedret OCR med beskæring, gråskala, fremdriftsbjælke og dubletfilter

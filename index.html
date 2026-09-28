@@ -1,83 +1,63 @@
-<!doctype html><html lang="da"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>JYSK PickFlow v0.7</title>
-<link rel="manifest" href="manifest.json">
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<!doctype html>
+<html lang='da'><head>
+<meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
+<title>JYSK PickFlow v0.8</title>
+<link rel='manifest' href='manifest.json'>
+<script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
 <style>
 body{margin:0;font-family:Arial;background:#eef2f5}
 header{background:#003B7A;color:#fff;padding:16px}
 .card{background:#fff;margin:10px;border-radius:18px;padding:18px}
-button{width:100%;padding:18px;border-radius:14px;border:0;font-size:22px;margin-top:10px;background:#003B7A;color:#fff}
+button{width:100%;padding:18px;border:0;border-radius:14px;font-size:22px;background:#003B7A;color:#fff}
 #preview{width:100%;border-radius:12px;display:none;margin-top:10px}
-#status{font-weight:bold;color:#003B7A;margin-top:12px}
-.loc{font-size:58px;font-weight:800}
+#progWrap{display:none;background:#d9e3ef;border-radius:10px;height:14px;margin:12px 0}
+#prog{background:#1E8E3E;height:100%;width:0;border-radius:10px}
 table{width:100%;border-collapse:collapse}td{padding:6px;border-bottom:1px solid #ddd}
 </style></head><body>
-<header><h2>JYSK PickFlow v0.7</h2><div>JYSK Parser • Test</div></header>
-<div id="start" class="card">
-<h3>Start pluk</h3>
-<input id="file" type="file" accept="image/*" capture="environment" style="display:none">
-<button onclick="file.click()">📄 Scan plukliste</button>
-<img id="preview">
-<div id="status"></div></div>
-
-<div id="result" class="card" style="display:none">
-<h3>TO <span id="toNo"></span></h3>
-<div id="found"></div>
-<table id="tbl"></table>
-<button onclick="beginPick()">Start pluk</button>
+<header><h2>JYSK PickFlow v0.8</h2><div>Forbedret JYSK OCR-test</div></header>
+<div class='card'>
+<input id='file' type='file' accept='image/*' capture='environment' style='display:none'>
+<button onclick='file.click()'>📄 Scan plukliste</button>
+<img id='preview'>
+<div id='status'></div>
+<div id='progWrap'><div id='prog'></div></div>
 </div>
-
-<div id="pick" class="card" style="display:none">
-<div id="step"></div><div id="loc" class="loc"></div>
-<div id="desc"></div><div>Artikel <b id="art"></b></div><div>Antal <b id="qty"></b></div>
-<input id="scan" placeholder="Scan EAN eller artikelnummer" style="width:100%;padding:12px;font-size:18px;border-radius:10px;border:1px solid #ccc">
-<div id="msg"></div>
+<div id='result' class='card' style='display:none'>
+<h3>TO <span id='to'></span></h3>
+<div id='found'></div>
+<table id='tbl'></table>
 </div>
-
 <script>
-let rows=[],i=0;
-file.onchange=e=>{const f=e.target.files[0];if(!f)return;preview.src=URL.createObjectURL(f);preview.style.display='block';run(f);}
-async function run(f){
- status.textContent="🔍 Læser plukliste...";
- const r=await Tesseract.recognize(f,'eng');
- const txt=r.data.text.replace(/\r/g,'');
- const tm=txt.match(/(846\d{6})/);
- toNo.textContent=tm?tm[1]:"Ukendt";
- rows=[];
- const locs=[...txt.matchAll(/\b60\d{3}\b/g)];
- locs.forEach((m,n)=>{
-   const after=txt.slice(m.index,m.index+250);
-   const art=after.match(/\b\d{7}\b/);
-   const qty=after.match(/\b(\d{1,3})\s*ST\b/i);
-   const desc=after.split("\n")[0].replace(/^\d+\s+\d+\s*/,"").trim();
-   if(art)rows.push({loc:m[0],art:art[0],qty:qty?qty[1]:"?",desc:desc||"Vare"});
- });
+file.onchange=e=>{const f=e.target.files[0];if(!f)return;preview.src=URL.createObjectURL(f);preview.style.display='block';process(f);}
+async function process(fileObj){
+ status.innerHTML='📸 Forbereder billede...'; progWrap.style.display='block'; prog.style.width='5%';
+ const img=new Image(); img.src=URL.createObjectURL(fileObj); await img.decode();
+ const c=document.createElement('canvas'); const x=c.getContext('2d');
+ const w=1200,h=Math.round(img.height*(1200/img.width)); c.width=w;c.height=h;
+ x.drawImage(img,0,0,w,h);
+ // Crop væk med tom bund og fokus på tabel + header
+ const crop=document.createElement('canvas'); const cx=crop.getContext('2d');
+ crop.width=w; crop.height=Math.round(h*0.72);
+ cx.drawImage(c,0,0,w,crop.height,0,0,w,crop.height);
+ const id=cx.getImageData(0,0,crop.width,crop.height); const d=id.data;
+ for(let i=0;i<d.length;i+=4){let g=(d[i]+d[i+1]+d[i+2])/3; g=g>170?255:g<90?0:g; d[i]=d[i+1]=d[i+2]=g;}
+ cx.putImageData(id,0,0);
+ status.innerHTML='🔍 Læser plukliste...'; prog.style.width='25%';
+ const res=await Tesseract.recognize(crop,'eng',{logger:m=>{if(m.status==='recognizing text'){prog.style.width=(25+m.progress*70)+'%';status.innerHTML='🔍 '+Math.round(m.progress*100)+'%';}}});
+ const txt=res.data.text.replace(/\r/g,'');
+ const tm=txt.match(/Delivery\s*:?\s*(846\d{6})/i)||txt.match(/(846\d{6})/);
+ to.textContent=tm?tm[1]:'Ukendt';
+ let rows=[]; const locs=[...txt.matchAll(/\b60\d{3}\b/g)];
+ locs.forEach(m=>{const s=txt.slice(m.index,m.index+220);const art=s.match(/\b\d{7}\b/);const qty=s.match(/\b(\d+)\s*ST\b/i);const desc=s.split('\n')[0].replace(/^\d+\s+\d+\s*/,'').trim();if(art)rows.push({loc:m[0],art:art[0],qty:qty?qty[1]:'?',desc:desc});});
+ // Fjern dubletter
+ rows=rows.filter((r,i,a)=>a.findIndex(t=>t.loc===r.loc&&t.art===r.art)===i);
  if(rows.length<10){
-   status.innerHTML="⚠️ Parser fandt "+rows.length+" linjer. Testdata bruges så resten af flowet kan testes.";
+   status.innerHTML='⚠️ Kun '+rows.length+' linjer fundet. Brug testlisten.';
    rows=[
-   {loc:"60626",art:"2765960",qty:"6",desc:"Toilet brush MEDLE steel"},
-   {loc:"60627",art:"2766440",qty:"6",desc:"Pedal bin MALA 3L black"},
-   {loc:"60628",art:"2769000",qty:"1",desc:"Wall hook EKEDALEN"},
-   {loc:"60629",art:"2769800",qty:"6",desc:"Tray BILLSTA"},
-   {loc:"60630",art:"2773701",qty:"6",desc:"MOHEDA diffuser"},
-   {loc:"60631",art:"2773801",qty:"6",desc:"MOHEDA ocean"},
-   {loc:"60633",art:"2778312",qty:"4",desc:"MOHED shower shelf"},
-   {loc:"60634",art:"2779802",qty:"6",desc:"BALSBY toilet brush"},
-   {loc:"60635",art:"2780940",qty:"12",desc:"HALLERNA hairbrush"},
-   {loc:"60639",art:"2781500",qty:"10",desc:"RIALA hooks"},
-   {loc:"60640",art:"2781700",qty:"12",desc:"FORSBY squeegee"},
-   {loc:"60641",art:"2784103",qty:"6",desc:"STOCKVIK towel holder"},
-   {loc:"60642",art:"3248411",qty:"1",desc:"HYLLA frame"},
-   {loc:"60643",art:"3264346",qty:"1",desc:"STRIA 120"},
-   {loc:"60650",art:"3264378",qty:"1",desc:"STRIA 160"},
-   {loc:"60666",art:"3271032",qty:"1",desc:"BILLEFJORD frame"}];
- } else status.textContent="✅ "+rows.length+" lokationer fundet.";
- tbl.innerHTML=""; rows.forEach(r=>tbl.innerHTML+=`<tr><td><b>${r.loc}</b></td><td>${r.art}</td><td>${r.qty}</td></tr>`);
- found.textContent=rows.length+" lokationer fundet";
- result.style.display='block';
+['60626','2765960','Toilet brush MEDLE steel','6'],['60627','2766440','Pedal bin MALA','6'],['60628','2769000','Wall hook EKEDALEN','1'],['60629','2769800','Tray BILLSTA','6'],['60630','2773701','MOHEDA diffuser','6'],['60631','2773801','MOHEDA ocean','6'],['60633','2778312','Shower shelf','4'],['60634','2779802','BALSBY brush','6'],['60635','2780940','HALLERNA hairbrush','12'],['60639','2781500','RIALA hooks','10'],['60640','2781700','FORSBY squeegee','12'],['60641','2784103','STOCKVIK holder','6'],['60642','3248411','HYLLA','1'],['60643','3264346','STRIA 120','1'],['60650','3264378','STRIA 160','1'],['60666','3271032','BILLEFJORD','1']
+].map(v=>({loc:v[0],art:v[1],desc:v[2],qty:v[3]}));
+ }else status.innerHTML='✅ '+rows.length+' lokationer fundet.';
+ prog.style.width='100%'; result.style.display='block'; found.textContent=rows.length+' lokationer';
+ tbl.innerHTML=''; rows.forEach(r=>tbl.innerHTML+=`<tr><td><b>${r.loc}</b></td><td>${r.art}</td><td>${r.qty} stk</td></tr>`);
 }
-function beginPick(){result.style.display='none';pick.style.display='block';show();}
-function show(){const r=rows[i];step.textContent=`${i+1}/${rows.length}`;loc.textContent=r.loc;desc.textContent=r.desc;art.textContent=r.art;qty.textContent=r.qty+" stk";scan.value="";msg.textContent="";}
-scan.oninput=()=>{const r=rows[i];if(scan.value.trim()===r.art){msg.style.color="green";msg.textContent="✔ Godkendt";setTimeout(()=>{i++; if(i>=rows.length){document.body.innerHTML='<header><h2>TO FÆRDIG</h2></header><div class=card><h1>✔ '+toNo.textContent+'</h1><p>'+rows.length+' lokationer plukket.</p></div>';} else show();},400);} else if(scan.value.length>=7){msg.style.color="red";msg.textContent="✖ Forkert vare";}}
 </script></body></html>

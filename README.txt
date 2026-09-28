@@ -1,1 +1,1 @@
-Upload disse filer til GitHub og overskriv de eksisterende.
+v0.6 OCR testversion.

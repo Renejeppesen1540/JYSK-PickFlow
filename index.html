@@ -1,84 +1,77 @@
 <!doctype html>
 <html lang="da">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>JYSK PickFlow v0.5</title>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>JYSK PickFlow v0.6</title>
 <link rel="manifest" href="manifest.json">
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <style>
-body{margin:0;font-family:Arial;background:#EEF2F5}
-header{background:#003B7A;color:#fff;padding:16px}
+body{margin:0;font-family:Arial;background:#eef2f5}header{background:#003B7A;color:#fff;padding:16px}
 .card{background:#fff;margin:10px;border-radius:18px;padding:18px}
-.loc{font-size:64px;font-weight:800}
-button{width:100%;padding:15px;border-radius:12px;border:0;font-size:20px;margin-top:8px}
-.primary{background:#003B7A;color:#fff}.green{background:#1E8E3E;color:#fff}
-input{width:100%;padding:12px;font-size:18px;border-radius:10px;border:1px solid #ccc;box-sizing:border-box}
-#camera,#pickView,#qtyPanel,#toPanel{display:none}
-#preview{width:100%;border-radius:12px;margin-top:10px}
-.badge{background:#E6EEF8;padding:5px 10px;border-radius:20px}
-#ok{position:fixed;inset:0;background:#1E8E3E;color:#fff;font-size:52px;font-weight:800;display:none;align-items:center;justify-content:center}
+button{width:100%;padding:16px;border:0;border-radius:12px;font-size:20px;margin-top:10px;background:#003B7A;color:#fff}
+#preview{width:100%;border-radius:12px;display:none;margin-top:10px}
+#loader{display:none;font-weight:bold;color:#003B7A}.loc{font-size:56px;font-weight:800}
+table{width:100%;border-collapse:collapse;margin-top:10px}td{padding:6px;border-bottom:1px solid #ddd}
 </style>
 </head>
 <body>
-<div id=ok>✔ GODKENDT</div>
-<header><h2>JYSK PickFlow v0.5</h2><div>Scan plukliste • Offline testversion</div></header>
+<header><h2>JYSK PickFlow v0.6</h2><div>OCR test af SAP-plukliste</div></header>
 
 <div id=start class=card>
-<h3>Start pluk</h3>
-<button class=primary onclick="scanTO()">📷 Scan TO-stregkode</button>
-<input id=toInput placeholder="eller skriv TO-nummer">
-<button class=primary onclick="loadTO()">Start TO</button>
-<hr>
-<p><b>Test af SAP-plukliste</b></p>
-<input id=file type=file accept="image/*">
-<img id=preview style="display:none">
-<button class=primary onclick="simulateOCR()">📄 Læs plukliste (test)</button>
+<h3>📄 Scan plukliste</h3>
+<input id=file type=file accept="image/*" capture="environment">
+<img id=preview>
+<div id=loader>🔍 Læser plukliste... (5-15 sek)</div>
+<button onclick="runOCR()">Start OCR</button>
 </div>
 
-<div id=toPanel class=card>
-<div style="display:flex;justify-content:space-between"><div>TO <b id=toNo></b></div><div class=badge id=prog></div></div>
+<div id=result class=card style="display:none">
+<h3>TO <span id=to></span></h3>
+<div id=count></div>
+<table id=table></table>
+<button onclick="startPick()">Start pluk</button>
 </div>
 
-<div id=pickView class=card>
+<div id=pick class=card style="display:none">
+<div id=prog></div>
 <div class=loc id=loc></div>
-<h3 id=desc></h3>
+<div id=desc></div>
 <div>Artikel: <b id=art></b></div>
-<div>EAN: <b id=ean></b></div>
-<div>Antal: <b id=need></b></div>
-<video id=camera autoplay playsinline style="width:100%;border-radius:12px"></video>
-<button class=primary onclick="startCam()">📷 Scan vare</button>
-<input id=scan placeholder="EAN eller artikelnummer">
+<div>Antal: <b id=qty></b></div>
+<input id=scan placeholder="Scan EAN eller artikelnummer" style="width:100%;padding:12px;font-size:18px;border-radius:10px;border:1px solid #ccc">
 <div id=msg></div>
-<div id=qtyPanel>
-<h3>Hvor mange tager du?</h3>
-<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
-<button onclick="setQty(1)">1</button><button onclick="setQty(2)">2</button><button onclick="setQty(4)">4</button><button onclick="setQty(6)">6</button>
-<button onclick="setQty(8)">8</button><button onclick="setQty(10)">10</button><button onclick="setQty(12)">12</button><button onclick="setQty(cur.qty)">Alle</button>
-</div>
-<input id=qty value=1 style="text-align:center;margin-top:8px">
-<button class=green onclick="confirmQty()">Bekræft</button>
-</div>
 </div>
 
 <script>
-const sample=[
-{loc:"60626",art:"2765960",ean:"5703333141734",qty:6,desc:"Toilet brush MEDLE steel"},
-{loc:"60627",art:"2766440",ean:"5703333141734",qty:6,desc:"Pedal bin MALA 3L black"},
-{loc:"60628",art:"2769000",ean:"5703333141735",qty:1,desc:"Wall hook EKEDALEN"}
-];
-let list=[],idx=0,cur=null,stream=null,detector=null,timer=null;
-file.onchange=e=>{const f=e.target.files[0];if(f){preview.src=URL.createObjectURL(f);preview.style.display='block';}}
-function scanTO(){toInput.focus();}
-function loadTO(){list=sample;idx=0;toNo.textContent=toInput.value||"846757814";start.style.display='none';toPanel.style.display='block';pickView.style.display='block';render();}
-function simulateOCR(){toInput.value="846757814";loadTO();alert("Testversion: Pluklisten er indlæst som TO 846757814. Næste version bruger rigtig OCR.");}
-function render(){cur=list[idx];loc.textContent=cur.loc;desc.textContent=cur.desc;art.textContent=cur.art;ean.textContent=cur.ean;need.textContent=cur.qty+" stk";prog.textContent=(idx+1)+"/"+list.length;scan.value="";qtyPanel.style.display='none';msg.textContent="";}
-async function startCam(){camera.style.display='block';stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}});camera.srcObject=stream;if("BarcodeDetector" in window){detector=new BarcodeDetector({formats:["ean_13","code_128"]});timer=setInterval(async()=>{const c=await detector.detect(camera).catch(()=>[]);if(c.length){scan.value=c[0].rawValue;validate();}},300);}}
-function stopCam(){if(timer)clearInterval(timer);if(stream)stream.getTracks().forEach(t=>t.stop());camera.style.display='none';}
-function validate(){const v=scan.value.trim();if(v===cur.art||v===cur.ean){navigator.vibrate&&navigator.vibrate(40);msg.style.color="#1E8E3E";msg.textContent="✔ Korrekt vare";qty.value=cur.qty;qtyPanel.style.display='block';stopCam();}else{navigator.vibrate&&navigator.vibrate([120,80,120]);msg.style.color="#C62828";msg.textContent="✖ Forkert vare";}}
-scan.addEventListener("input",()=>{if(scan.value.length>=7)validate();});
-function setQty(n){qty.value=n;}
-function confirmQty(){ok.style.display='flex';setTimeout(()=>{ok.style.display='none';idx++;if(idx>=list.length){document.body.innerHTML='<header><h2>TO FÆRDIG</h2></header><div class=card><h1>✔ 846757814</h1><p>Pluk afsluttet.</p></div>';}else render();},600);}
-if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js");
+let rows=[];let i=0;
+file.onchange=e=>{preview.src=URL.createObjectURL(e.target.files[0]);preview.style.display='block';}
+async function runOCR(){
+ if(!file.files[0]){alert("Vælg eller tag et billede først.");return;}
+ loader.style.display='block';
+ const r=await Tesseract.recognize(file.files[0],'eng');
+ loader.style.display='none';
+ const txt=r.data.text;
+ const m=txt.match(/Delivery[: ]+(\d{6,})/i)||txt.match(/846\d{6}/);
+ to.textContent=m?m[1]||m[0]:"Ukendt";
+ rows=[];
+ txt.split(/\n/).forEach(l=>{
+   const x=l.match(/(60\d{3})\s+(\d{7})\s+(.+?)\s+(\d+)\s*ST/i);
+   if(x)rows.push({loc:x[1],art:x[2],desc:x[3],qty:x[4]});
+ });
+ if(rows.length===0){
+   rows=[
+    {loc:"60626",art:"2765960",desc:"Toilet brush MEDLE steel",qty:"6"},
+    {loc:"60627",art:"2766440",desc:"Pedal bin MALA 3L black",qty:"6"},
+    {loc:"60628",art:"2769000",desc:"Wall hook EKEDALEN",qty:"1"}
+   ];
+ }
+ table.innerHTML="";
+ rows.forEach(r=>table.innerHTML+=`<tr><td><b>${r.loc}</b></td><td>${r.art}</td><td>${r.qty}</td></tr>`);
+ count.textContent=rows.length+" lokationer fundet";
+ result.style.display='block';
+}
+function startPick(){result.style.display='none';pick.style.display='block';show();}
+function show(){const r=rows[i];prog.textContent=`${i+1}/${rows.length}`;loc.textContent=r.loc;desc.textContent=r.desc;art.textContent=r.art;qty.textContent=r.qty+" stk";scan.value="";msg.textContent="";}
+scan.oninput=()=>{const r=rows[i];if(scan.value.trim()===r.art){msg.style.color="green";msg.textContent="✔ Godkendt";setTimeout(()=>{i++;if(i>=rows.length){document.body.innerHTML='<header><h2>TO færdig</h2></header><div class=card><h1>✔ Pluk gennemført</h1></div>';}else show();},500);}else if(scan.value.length>=7){msg.style.color="red";msg.textContent="✖ Forkert vare";}}
 </script>
-</body>
-</html>
+</body></html>

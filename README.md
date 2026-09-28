@@ -1,3 +1,2 @@
-# JYSK PickFlow v1.0.1
-
-Projektstruktur klar.
+# JYSK PickFlow v1.2
+Login og mail (EmailJS kræver nøgler).
